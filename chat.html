@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://unpkg.com/twitch-js@>2.0.0-beta.41"></script>
+</head>
+<body>
+    <div id="app">
+        Hello World
+    </div>
+    <script type="module">
+
+        const channel = "fimion";
+
+        const { Chat } = window.TwitchJs;
+
+        const app = document.getElementById("app");
+
+        app.innerHTML = ``;
+
+        const run = async () => {
+        const chat = new Chat({
+            log: { level: "warn" }
+        });
+
+        chat.on("*", (message) => {
+            console.log(message);
+            const time = new Date(message.timestamp).toTimeString();
+            const event = message.event || message.command;
+            const channel = message.channel;
+            const msg = message.message || "";
+            const displayName = message.tags.displayName
+            const color = message.tags.color;
+
+            if(event==='PRIVMSG'){
+            const newMsg = document.createElement('div');
+            newMsg.classList.add('msg');
+
+            const nameEl = document.createElement('strong');
+            nameEl.setAttribute('style',`color:${color};`);
+            nameEl.innerText = displayName;
+            
+            const textEl = document.createElement('span');
+            textEl.innerText = `: ${msg}`;
+
+            newMsg.append(nameEl, textEl);
+            
+            app.appendChild(newMsg);
+            newMsg.scrollIntoView({behavior:'smooth'});
+            }
+        });
+
+        await chat.connect();
+        await chat.join(channel);
+        };
+
+        run();
+    </script>
+</body>
+</html>

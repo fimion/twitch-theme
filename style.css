@@ -1,0 +1,30 @@
+*{
+    color: black;
+    font-family: 'Comic Sans MS', cursive;
+    font-size: 28px;
+    padding:0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body{
+    overflow-y: hidden;
+    min-height: 100vh;
+}
+#app{
+    padding:10px;
+    background: white;
+    border-radius: 25px;
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow-y: hidden;
+    border: 20px blue ridge;
+}
+.msg, .msg *{
+    background-color: transparent;
+    overflow-wrap: anywhere;
+}
+
+.msg strong{
+    -webkit-text-stroke: 1px blue;
+    text-shadow: 2px 2px 0px darkblue;
+}
