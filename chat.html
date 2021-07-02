@@ -1,64 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="./style.css">
-    <script src="https://unpkg.com/twitch-js@>2.0.0-beta.41"></script>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://unpkg.com/twitch-js@2.0.0-beta.42/dist/twitch.js"></script>
 </head>
 <body>
-    <div id="app">
-        Hello World
-    </div>
-    <script type="module">
+<div id="app">
+  Hello World
+</div>
+<script>
 
-        const channel = "fimion";
 
-        const { Chat } = window.TwitchJs;
+  const channel = "fimion"
 
-        const app = document.getElementById("app");
+  const {Chat} = window.TwitchJs
 
-        app.innerHTML = ``;
+  const app = document.getElementById('app')
 
-        const run = async () => {
-        const chat = new Chat({
-            log: { level: "warn" }
-        });
 
-        chat.on("*", (message) => {
-            console.log(message);
-            const time = new Date(message.timestamp).toTimeString();
-            const event = message.event || message.command;
-            const channel = message.channel;
-            const msg = message.message || "";
-            const displayName = message.tags.displayName
-            const color = message.tags.color;
+  function getParsedMessageElement(message, {emotes}) {
 
-            if(event==='PRIVMSG'){
-            const newMsg = document.createElement('div');
-            newMsg.classList.add('msg');
 
-            const nameEl = document.createElement('strong');
-            nameEl.setAttribute('style',`color:${color};`);
-            nameEl.innerText = displayName;
-            
-            const textEl = document.createElement('span');
-            textEl.innerText = `: ${msg}`;
+    if (!emotes) {
 
-            newMsg.append(nameEl, textEl);
-            
-            app.appendChild(newMsg);
-            newMsg.scrollIntoView({behavior:'smooth'});
-            }
-        });
+      const msgSpan = document.createElement('span')
+      msgSpan.innerText = `: ${message}`
 
-        await chat.connect();
-        await chat.join(channel);
-        };
+      return msgSpan
+    }
 
-        run();
-    </script>
+    // store all emote keywords
+    // ! you have to first scan through
+    // the message string and replace later
+    const emoteList = []
+
+    // iterate of emotes to access ids and positions
+    Object.entries(emotes).forEach(([index, el]) => {
+      // use only the first position to find out the emote key word
+      const {id, start, end} = el
+      const stringToSplit = message.substring(start, end+1)
+
+      const emote = document.createElement('img')
+      emote.src = `https://static-cdn.jtvnw.net/emoticons/v1/${id}/2.0`
+      emote.height = 32;
+      emote.width = 32;
+
+
+      emoteList.push({
+        stringToSplit,
+        emote,
+      })
+    })
+
+    // generate HTML and replace all emote keywords with image elements
+    const msgSpan = document.createElement('span')
+
+    const start = new DocumentFragment()
+    start.textContent = `: `
+
+    msgSpan.append(start)
+
+    console.log(msgSpan)
+
+    const end = new DocumentFragment()
+
+    end.textContent = emoteList.reduce(
+        (acc, {stringToSplit, emote}) => {
+
+          const [part, rest] = acc.split(stringToSplit)
+
+          const text = new DocumentFragment()
+          text.textContent = part
+
+          msgSpan.append(text, emote)
+
+          return rest
+        },
+        message,
+    )
+
+    msgSpan.append(end)
+
+    return msgSpan
+  }
+
+
+  app.innerHTML = ``
+
+  const run = async () => {
+    const chat = new Chat({
+      log: {level: "warn"},
+    })
+
+
+    chat.on("*", (message) => {
+      console.log(message)
+      const time = new Date(message.timestamp).toTimeString()
+      const event = message.event || message.command
+      const channel = message.channel
+      const msg = message.message || ""
+      const displayName = message.tags.displayName
+      const color = message.tags.color
+
+      if (event === 'PRIVMSG') {
+        const newMsg = document.createElement('div')
+        newMsg.classList.add('msg')
+
+        const nameEl = document.createElement('strong')
+        nameEl.setAttribute('style', `color:${color};`)
+        nameEl.innerText = displayName
+
+        const textEl = getParsedMessageElement(msg, message.tags)
+
+        newMsg.append(nameEl, textEl)
+
+        app.appendChild(newMsg)
+        newMsg.scrollIntoView({behavior: 'smooth'})
+      }
+    })
+
+    await chat.connect()
+    await chat.join(channel)
+  }
+
+  run()
+</script>
 </body>
 </html>
