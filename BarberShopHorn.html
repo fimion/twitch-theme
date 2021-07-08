@@ -9,43 +9,133 @@
     <style>
         *{padding:0;margin:0;box-sizing: border-box;}
 
-        :root {
-            --d: calc(100% / 4);
-            --s: 50px;
+        #app.hotpink-blue {
+          height: 100vh;
+          width: 100vw;
+          background-image: linear-gradient(-30deg, transparent 0, hotpink 0%, hotpink 25%, blue 25%, blue 50%, hotpink 50%, hotpink 75%, blue 75%, blue 100%, transparent 100px);
+          background-size: 100px 57.735026919px;
+          animation: 3s linear infinite slide-hotpink-blue;
         }
 
-        body {
-            height: 100vh;
-            width: 100vw;
-            background-image: linear-gradient(
-                -45deg,
-                transparent 0,
-                hotpink 0,
-                hotpink calc(1 * var(--d)),
-                blue calc(1 * var(--d)),
-                blue calc(2 * var(--d)),
-                hotpink calc(2 * var(--d)),
-                hotpink calc(3 * var(--d)),
-                blue calc(3 * var(--d)),
-                blue calc(4 * var(--d)),
-                transparent calc(4 * var(--d))
-            );
-            background-size: var(--s) var(--s);
-            animation: 1s linear infinite slide;
+        @keyframes slide-hotpink-blue {
+          0% {
+            background-position-y: 0;
+          }
+          100% {
+            background-position-y: -57.735026919px;
+          }
         }
 
-        @keyframes slide {
-            0% {
-                background-position-y: 0;
-            }
-            100% {
-                background-position-y: calc(-1 * var(--s));
-            }
+        #app.barber-pole {
+          height: 100vh;
+          width: 100vw;
+          background-image: linear-gradient(-30deg, transparent 0, white 0%, white 12.5%, red 12.5%, red 25%, white 25%, white 37.5%, blue 37.5%, blue 50%, white 50%, white 62.5%, red 62.5%, red 75%, white 75%, white 87.5%, blue 87.5%, blue 100%, transparent 200px);
+          background-size: 200px 115.4700538379px;
+          animation: 3s linear infinite slide-barber-pole;
         }
+
+        @keyframes slide-barber-pole {
+          0% {
+            background-position-y: 0;
+          }
+          100% {
+            background-position-y: -115.4700538379px;
+          }
+        }
+
+        #app.pride {
+          height: 100vh;
+          width: 100vw;
+          background-image: linear-gradient(-25deg, transparent 0, red 0%, red 5.5555555556%, orange 5.5555555556%, orange 11.1111111111%, yellow 11.1111111111%, yellow 16.6666666667%, green 16.6666666667%, green 22.2222222222%, blue 22.2222222222%, blue 27.7777777778%, indigo 27.7777777778%, indigo 33.3333333333%, violet 33.3333333333%, violet 38.8888888889%, lightblue 38.8888888889%, lightblue 44.4444444444%, white 44.4444444444%, white 50%, red 50%, red 55.5555555556%, orange 55.5555555556%, orange 61.1111111111%, yellow 61.1111111111%, yellow 66.6666666667%, green 66.6666666667%, green 72.2222222222%, blue 72.2222222222%, blue 77.7777777778%, indigo 77.7777777778%, indigo 83.3333333333%, violet 83.3333333333%, violet 88.8888888889%, lightblue 88.8888888889%, lightblue 94.4444444444%, white 94.4444444444%, white 100%, transparent 300px);
+          background-size: 300px 139.8922974465px;
+          animation: 3s linear infinite slide-pride;
+        }
+
+        @keyframes slide-pride {
+          0% {
+            background-position-y: 0;
+          }
+          100% {
+            background-position-y: -139.8922974465px;
+          }
+        }
+
+        #app.hungarian-flag {
+  height: 100vh;
+  width: 100vw;
+  background-image: linear-gradient(0deg, transparent 0, #477050 0%, #477050 16.6666666667%, white 16.6666666667%, white 33.3333333333%, #ce2939 33.3333333333%, #ce2939 50%, #477050 50%, #477050 66.6666666667%, white 66.6666666667%, white 83.3333333333%, #ce2939 83.3333333333%, #ce2939 100%, transparent 150px);
+  background-size: 150px 150px;
+  animation: 4s linear infinite slide-hungarian-flag;
+}
+
+@keyframes slide-hungarian-flag {
+  0% {
+    background-position-y: 0;
+  }
+  100% {
+    background-position-y: -150px;
+  }
+}
+
+#app.mexican-flag {
+  height: 100vh;
+  width: 100vw;
+  background-image: url("https://assets.codepen.io/729148/Coat_of_arms_of_Mexico.svg"), linear-gradient(90deg, transparent 0, #006847 0%, #006847 16.6666666667%, white 16.6666666667%, white 33.3333333333%, #ce1126 33.3333333333%, #ce1126 50%, #006847 50%, #006847 66.6666666667%, white 66.6666666667%, white 83.3333333333%, #ce1126 83.3333333333%, #ce1126 100%, transparent 150px);
+  background-size: 131.25px 75px, 262.5px 150px;
+  animation: 10s linear infinite slide-mexican-flag;
+}
+
+@keyframes slide-mexican-flag {
+  0% {
+    background-position-x: 0, 0;
+  }
+  100% {
+    background-position-x: 262.5px, 262.5px;
+  }
+}
 
     </style>
+  <script src="https://unpkg.com/twitch-js@2.0.0-beta.42/dist/twitch.js"></script>
 </head>
 <body>
-    <div class="stripes"></div>
+    <div id="app" class="hotpink-blue"></div>
+    <script>
+      const channel = "fimion";
+
+      const {Chat} = window.TwitchJs;
+
+      const app = document.getElementById('app');
+
+      const HORN_CLASSES  = [
+          'hotpink-blue',
+          'mexican-flag',
+          'hungarian-flag',
+          'pride',
+          'barber-pole'
+      ];
+
+      const run = async () => {
+        const chat = new Chat({
+          log: {level: "warn"},
+        });
+
+
+        chat.on("PRIVMSG", (message) => {
+          const msg = message.message || "";
+
+          if(msg.indexOf('!unihorn') === 0){
+            const className = HORN_CLASSES.shift();
+            app.className = className;
+            HORN_CLASSES.push(className);
+          }
+
+        });
+
+        await chat.connect();
+        await chat.join(channel);
+      }
+
+      run();
+    </script>
 </body>
 </html>
