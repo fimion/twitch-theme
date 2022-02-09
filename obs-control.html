@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    h1{
+      font-family: 'Comic Sans MS', cursive;
+      color: white;
+      text-shadow: 0 0 2px black;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="scene"></h1>
+  <script>
+    const h1 = document.getElementById('scene');
+    function updateSceneName(){
+      obsstudio.getCurrentScene((scene)=>{
+        h1.textContent = scene.name;
+      })
+    }
+
+    window.addEventListener('obsSceneChanged', updateSceneName);
+    updateSceneName();
+  </script>
+</body>
+</html>

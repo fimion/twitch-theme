@@ -10,15 +10,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Follower!</title>
     <style>
-        
+
         :root{
             color: darkmagenta;
-            
+
             font-family: 'Chelsea Market', cursive;
             font-size: 32px;
         }
         *{
-         padding:0; margin:0; box-sizing: border-box;   
+         padding:0; margin:0; box-sizing: border-box;
         }
         body{
             height: 100vh;
@@ -26,7 +26,7 @@
         }
         .banner{
             fill:yellow;
-            
+
             text-shadow: 0 0 5px blue;
         }
         .banner-background{
@@ -53,6 +53,26 @@
             padding: 20px;
         }
 
+        .subscriber{
+            align-self: center;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .canvas{
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: transparent;
+            height: 100vh;
+            width: 100vw;
+            transition: opacity 1s ease;
+        }
+
+        .canvas.fade{
+            opacity: 0;
+        }
+
         .fade-enter-active {
             transition: opacity 1s ease, transform 2s ease-in-out;
         }
@@ -72,15 +92,27 @@
         }
     </style>
     <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
-    <script src="https://unpkg.com/twitch-js@>2.0.0-beta.41"></script>
+    <script src="https://cdn.jsdelivr.net/npm/comfy.js@latest/dist/comfy.min.js"></script>
 </head>
 <body>
-    
+
     <div id="app">
+            <canvas v-for="confetti in confettiList"
+                    :key="confetti.id"
+                    :id="'canvas'+confetti.id"
+                    :class="confetti.class"
+                    ref="canvas"
+                    class="canvas"></canvas>
             <transition name="fade" mode="out-in">
-            <svg v-if="currentEvent" 
+                <div v-if="currentSub" class="subscriber">
+                    Thanks {{currentSub.user}}
+                    <img src="SubscriberParty.png" height="200" width="200" />
+                </div>
+            </transition>
+            <transition name="fade" mode="out-in">
+            <svg v-if="currentEvent"
                 :key="currentEvent.id"
-                xmlns="http://www.w3.org/2000/svg" 
+                xmlns="http://www.w3.org/2000/svg"
                 xmlns:xlink="http://www.w3.org/1999/xlink"
                 width="400"
                 viewPort="0 0 400 400">
@@ -93,29 +125,80 @@
             </svg>
             </transition>
     </div>
-    <script src="https://unpkg.com/vue@3.1.1/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="./secret_vars.js"></script>
-    <script>
+    <script type="module">
+        import ConfettiGenerator from 'https://unpkg.com/confetti-js@0.0.18/dist/index.es.js';
         Pusher.logToConsole = true;
 
         const pusher = new Pusher(PUSHER_KEY,{cluster: 'us2'});
         const channel = pusher.subscribe(PUSHER_CHANNEL);
 
         channel.bind('debug', console.log);
-        
+
+        const channelName = "fimion"
+
+        const CONFETTI_TIME = 10000;
+
+        const subAudio = new Audio('./subAudio.mp3');
+        subAudio.volume = 1;
+        subAudio.addEventListener('loadeddata',()=>{
+          subAudio.play();
+        })
+        const fireworksAudio = new Audio('./fireworks.mp3');
+        fireworksAudio.volume = 0.35;
+        fireworksAudio.addEventListener('loadeddata',()=>{
+          fireworksAudio.play();
+        })
+        const followerAudio = new Audio('./newFollowerSound.mp3');
+        followerAudio.volume = 0.7;
+        followerAudio.addEventListener('loadeddata',()=>{
+          followerAudio.play();
+        })
+
+        window.addEventListener('click',()=>{
+          subAudio.play();
+          followerAudio.play();
+          fireworksAudio.play();
+        })
+
         Vue.createApp({
             data(){
                 return {
                     queue:[],
+                    subQueue:[],
                     currentTimeout: null,
+                    confettiCount:0,
+                    confettiList:[],
                 }
             },
             computed:{
                 currentEvent(){
                     return this.queue[0];
+                },
+                currentSub(){
+                    return this.subQueue[0];
+                }
+
+            },
+            watch:{
+                currentSub(val){
+                    if(val && val.user){
+                        subAudio.play();
+                    }
+                },
+                currentEvent(val){
+                    if(val){
+                        followerAudio.play();
+                    }
                 }
             },
+            async beforeCreate(){
+                ComfyJS.Init(channelName);
+            },
             mounted(){
+
+
                 channel.bind('channel.follow', (message) => {
                         console.log(message);
                         this.queue.push(message);
@@ -124,8 +207,134 @@
 
                         this.setupRemoveItem()
                     });
+
+                subAudio.addEventListener('ended', this.removeSubEvent);
+
+                ComfyJS.onSub = (user,message,subTierInfo, extra) =>{
+                    this.addSubEvent({user,message,subTierInfo,extra});
+                        // subAudio.play();
+                }
+                ComfyJS.onCommand = (user, command, message, flags, extra) => {
+                    const hasPermission = flags.broadcaster || flags.mod || flags.subscriber || flags.vip;
+                    switch(command){
+                        case 'subsound':
+                            subAudio.play();
+                            break;
+                        case 'followsound':
+                            followerAudio.play();
+                            break;
+                        case 'celebrate':
+                            if(!hasPermission && extra.sinceLastCommand.any < CONFETTI_TIME) return;
+                            this.confetti();
+                            break;
+                        case 'cornfetti':
+                            if(!hasPermission && extra.sinceLastCommand.any < CONFETTI_TIME) return;
+                            this.confetti([
+                                {type:'svg',src:'img/corns/corn-1.svg', weight: 0.5, size: 50},
+                                {type:'svg',src:'img/corns/corn-2.svg', weight: 0.5, size: 50},
+                                {type:'svg',src:'img/corns/corn-3.svg', weight: 0.5, size: 50},
+                            ], 175, {rotate:true});
+                            break;
+                        case 'donutfetti':
+                            if(!hasPermission && extra.sinceLastCommand.any < CONFETTI_TIME) return;
+                            this.confetti([
+                                {type:'svg',src:'img/donuts/donut-1.svg', weight: 0.5, size: 50},
+                                {type:'svg',src:'img/donuts/donut-2.svg', weight: 0.5, size: 50},
+                                {type:'svg',src:'img/donuts/donut-3.svg', weight: 0.5, size: 50},
+                                {type:'svg',src:'img/donuts/donut-4.svg', weight: 0.5, size: 50},
+                            ], 175, {clock: 65, rotate:true});
+                            break;
+                        case 'tacofetti':
+
+                            if(!hasPermission && extra.sinceLastCommand.any < CONFETTI_TIME) return;
+                            this.confetti([
+                                {type:'svg',src:'img/tacos/taco-1.svg', weight: 0.5, size: 50},
+                                {type:'svg',src:'img/tacos/taco-2.svg', weight: 0.5, size: 50},
+                                {type:'svg',src:'img/tacos/taco-3.svg', weight: 0.5, size: 50},
+                            ], 175, {rotate:true});
+                            break;
+                        case 'babyface':
+                            if(!hasPermission && extra.sinceLastCommand.any < CONFETTI_TIME) return;
+                            this.confetti([
+                                {type:'svg',src:'img/okra-1.svg', weight: 0.5, size: 50},
+                                {type:'svg',src:'img/okra-babyface.png', weight: 0.25, size: 150},
+                            ], 100, {clock:20});
+                            break;
+                    }
+
+                };
+
             },
             methods:{
+                // celebrate(user, message, flags, extra){
+                //     const hasPermission = flags.broadcaster || flags.mod || flags.subscriber || flags.vip;
+                //     if(!hasPermission && extra.sinceLastCommand.any < CONFETTI_TIME) return;
+                //     switch(0){
+                //         case message.indexOf('corn'):
+                //             this.confetti([
+                //                 {type:'svg',src:'img/corns/corn-1.svg', weight: 0.5, size: 50},
+                //                 {type:'svg',src:'img/corns/corn-2.svg', weight: 0.5, size: 50},
+                //                 {type:'svg',src:'img/corns/corn-3.svg', weight: 0.5, size: 50},
+                //             ], 175, {rotate:true});
+                //             break;
+                //         case message.indexOf('donut'):
+                //             this.confetti([
+                //                 {type:'svg',src:'img/donuts/donut-1.svg', weight: 0.5, size: 50},
+                //                 {type:'svg',src:'img/donuts/donut-2.svg', weight: 0.5, size: 50},
+                //                 {type:'svg',src:'img/donuts/donut-3.svg', weight: 0.5, size: 50},
+                //                 {type:'svg',src:'img/donuts/donut-4.svg', weight: 0.5, size: 50},
+                //             ], 175, {clock: 65, rotate:true});
+                //             break;
+                //         case message.indexOf('taco'):
+                //             this.confetti([
+                //                 {type:'svg',src:'img/tacos/taco-1.svg', weight: 0.5, size: 50},
+                //                 {type:'svg',src:'img/tacos/taco-2.svg', weight: 0.5, size: 50},
+                //                 {type:'svg',src:'img/tacos/taco-3.svg', weight: 0.5, size: 50},
+                //             ], 175, {rotate:true});
+                //             break;
+                //         case message.indexOf('babyface'):
+                //             this.confetti([
+                //                 {type:'svg',src:'img/okra-1.svg', weight: 0.5, size: 50},
+                //                 {type:'svg',src:'img/okra-babyface.png', weight: 0.25, size: 150},
+                //             ], 100, {clock:20});
+                //             break;
+                //         default:
+                //             this.confetti();
+                //             break;
+                //     }
+                // },
+                async confetti(particles, max=1000, options={}){
+                    const id = this.confettiCount;
+                    this.confettiList.push({
+                        id,
+                        class: "",
+                    });
+
+                    this.confettiCount++;
+
+                    await this.$nextTick();
+
+                    const confetti = new ConfettiGenerator({
+                        target: 'canvas'+id,
+                        max,
+                        props:particles,
+                        height: window.innerHeight,
+                        width: window.innerWidth,
+                        clock: 60,
+                        ...options
+                    });
+                    confetti.render();
+                    fireworksAudio.play();
+                    setTimeout(()=>{
+                        const index = this.confettiList.findIndex((e)=>e.id === id);
+                        this.confettiList[index].class = "fade";
+                    }, CONFETTI_TIME - 1000);
+                    setTimeout(()=>{
+                        confetti.clear()
+                        const index = this.confettiList.findIndex((e)=>e.id === id);
+                        this.confettiList.splice(index, 1);
+                    }, CONFETTI_TIME);
+                },
                 setupRemoveItem(){
                     if(!this.currentTimeout){
                         this.currentTimeout = setTimeout(()=>this.removeItem(), 3000);
@@ -138,6 +347,13 @@
                     if(this.queue.length){
                         this.setupRemoveItem();
                     }
+                },
+
+                addSubEvent(event){
+                    this.subQueue.push(event);
+                },
+                removeSubEvent(){
+                    this.subQueue.shift();
                 }
             }
         }).mount("#app")
