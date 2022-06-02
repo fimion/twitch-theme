@@ -104,7 +104,7 @@
                     ref="canvas"
                     class="canvas"></canvas>
             <transition name="fade" mode="out-in">
-                <div v-if="currentSub" class="subscriber">
+                <div v-if="currentSub" class="subscriber" :key="currentSub.id">
                     Thanks {{currentSub.user}}
                     <img src="SubscriberParty.png" height="200" width="200" />
                 </div>
@@ -143,33 +143,39 @@
         const subAudio = new Audio('./subAudio.mp3');
         subAudio.volume = 1;
         subAudio.addEventListener('loadeddata',()=>{
-          subAudio.play();
+          //subAudio.play();
         })
         const fireworksAudio = new Audio('./fireworks.mp3');
         fireworksAudio.volume = 0.35;
         fireworksAudio.addEventListener('loadeddata',()=>{
-          fireworksAudio.play();
+          //fireworksAudio.play();
         })
         const followerAudio = new Audio('./newFollowerSound.mp3');
         followerAudio.volume = 0.7;
         followerAudio.addEventListener('loadeddata',()=>{
-          followerAudio.play();
+          //followerAudio.play();
         })
+
+        const raidNoise = new Audio('./raidNoise.mp3');
+        raidNoise.volume = 1;
 
         window.addEventListener('click',()=>{
           subAudio.play();
           followerAudio.play();
           fireworksAudio.play();
+          raidNoise.play();
         })
 
         Vue.createApp({
             data(){
                 return {
                     queue:[],
+                    idCounter:0,
                     subQueue:[],
                     currentTimeout: null,
                     confettiCount:0,
                     confettiList:[],
+                    raidQueue:[],
                 }
             },
             computed:{
@@ -178,6 +184,9 @@
                 },
                 currentSub(){
                     return this.subQueue[0];
+                },
+                currentRaid(){
+                    return this.raidQueue[0];
                 }
 
             },
@@ -190,6 +199,11 @@
                 currentEvent(val){
                     if(val){
                         followerAudio.play();
+                    }
+                },
+                currentRaid(val){
+                    if(val){
+                        raidNoise.play();
                     }
                 }
             },
@@ -209,11 +223,14 @@
                     });
 
                 subAudio.addEventListener('ended', this.removeSubEvent);
+                raidNoise.addEventListener('ended', this.removeRaidEvent);
 
-                ComfyJS.onSub = (user,message,subTierInfo, extra) =>{
-                    this.addSubEvent({user,message,subTierInfo,extra});
-                        // subAudio.play();
-                }
+                ComfyJS.onSub = this.addSubEvent;
+                ComfyJS.onResub = this.addSubEvent;
+                ComfyJS.onSubGift = this.addSubEvent;
+                ComfyJS.onSubMysteryGift = this.addSubEvent;
+                ComfyJS.onGiftSubContinue = this.addSubEvent;
+                ComfyJS.onRaid = this.addRaidEvent;
                 ComfyJS.onCommand = (user, command, message, flags, extra) => {
                     const hasPermission = flags.broadcaster || flags.mod || flags.subscriber || flags.vip;
                     switch(command){
@@ -349,12 +366,27 @@
                     }
                 },
 
-                addSubEvent(event){
-                    this.subQueue.push(event);
+                addSubEvent(user,message,subTierInfo,extra){
+
+                    this.subQueue.push({id:this.idCounter,user,message,subTierInfo,extra});
+                    this.idCounter++;
                 },
                 removeSubEvent(){
-                    this.subQueue.shift();
+                    setTimeout(()=>{
+                        this.subQueue.shift();
+                    }, 2000);
+                    
+                },
+                addRaidEvent(user,viewers,extra){
+                    this.raidQueue.push({id:this.idCounter,user,viewers,extra});
+                    this.idCounter++;
+                },
+                removeRaidEvent(){
+                    setTimeout(()=>{
+                        this.raidQueue.shift();
+                    },2000);
                 }
+            
             }
         }).mount("#app")
     </script>
