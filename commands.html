@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<script src="https://unpkg.com/chroma-js/chroma.min.js"></script>
+<script type="module">
+
+
+  function DMXUniverse(){
+    let dmx = [];
+    for(let i = 0; i < 512; i++){
+      dmx.push(0);
+    }
+    return dmx;
+  }
+
+  async function setDMX(universe, channels){
+    const params = new URLSearchParams();
+    params.set('u',universe);
+    params.set('d', channels.join(','));
+
+    console.log(await fetch('http://fontane/set_dmx',{
+      method:'POST',
+      body:params,
+    }))
+  }
+
+  (async function(){
+
+
+    let dmx = DMXUniverse();
+    dmx[3]=189;
+
+    const color = 'purple';
+
+    if(chroma.valid(color)) {
+      const myColor = chroma(color).rgb();
+      myColor.forEach((e, i) => {
+        dmx[i] = e;
+      });
+      setDMX(1, dmx);
+    }
+
+
+
+
+
+
+  })()
+</script>
+
+</body>
+</html>

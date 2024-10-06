@@ -17,7 +17,7 @@ body{
     min-height: 100vh;
     max-height: 100vh;
     overflow-y: hidden;
-    border: 20px blue ridge;
+    border: 20px deepskyblue ridge;
 }
 .msg, .msg *{
     background-color: transparent;

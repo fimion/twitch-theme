@@ -7,7 +7,17 @@
     <title>Document</title>
     <style>
         body{
-            background: #000 0 0/400px 400px url(https://alex.party/img/starry-night.svg)
+          background: #000 -20px -20px/400px
+          url("https://assets.codepen.io/729148/memphis-design.svg");
+          animation: background-slide 24s infinite linear;
+        }
+        @keyframes background-slide{
+          0% {
+            background-position: -20px -20px;
+          }
+          100%{
+            background-position: 380px 380px;
+          }
         }
     </style>
 </head>

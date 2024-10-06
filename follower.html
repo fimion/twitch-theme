@@ -93,6 +93,8 @@
     </style>
     <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/comfy.js@latest/dist/comfy.min.js"></script>
+  <script src="https://unpkg.com/chroma-js/chroma.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/gsap.min.js"></script>
 </head>
 <body>
 
@@ -128,6 +130,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="./secret_vars.js"></script>
     <script type="module">
+        import _throttle from 'https://unpkg.com/lodash-es@4.17.21/throttle.js';
         import ConfettiGenerator from 'https://unpkg.com/confetti-js@0.0.18/dist/index.es.js';
         Pusher.logToConsole = true;
 
@@ -165,6 +168,73 @@
           fireworksAudio.play();
           raidNoise.play();
         })
+
+        function DMXUniverse(){
+          let dmx = [];
+          for(let i = 0; i < 512; i++){
+            dmx.push(0);
+          }
+          return dmx;
+        }
+
+        const setDMX = _throttle(async function(universe, channels){
+          const params = new URLSearchParams();
+          params.set('u',universe);
+          params.set('d', channels.join(','));
+
+          try {
+            await fetch('http://fontane/set_dmx', {
+              method: 'POST',
+              body: params,
+            });
+          } catch (e) {
+            console.log(e);
+          }
+        }, 150);
+
+
+
+        let previousColor = [0,0,0];
+        let colorAnimation;
+
+        (async function(){
+          try {
+            const result = await fetch('http://fontane/get_dmx?u=1',{mode:'cors'});
+            const json = await result.json();
+            previousColor[0] = json.dmx[0];
+            previousColor[1] = json.dmx[1];
+            previousColor[2] = json.dmx[2];
+          } catch(e){
+            console.log(e);
+          }
+        })()
+
+        function changeLightColor(message){
+          let dmx = DMXUniverse();
+          dmx[3]=189;
+
+          const color = message;
+
+          if(chroma.valid(color) && !colorAnimation) {
+            const myColor = chroma(color).rgb();
+
+            colorAnimation = gsap.to(previousColor,{
+              endArray: myColor,
+              duration:1,
+              onUpdate(){
+                previousColor.forEach((e, i) => {
+                  dmx[i] = e;
+                });
+                setDMX(1, dmx);
+              },
+              onComplete(){
+                colorAnimation = null;
+              }
+            });
+
+
+          }
+        }
 
         Vue.createApp({
             data(){
@@ -244,6 +314,10 @@
                             if(!hasPermission && extra.sinceLastCommand.any < CONFETTI_TIME) return;
                             this.confetti();
                             break;
+                      case 'light':
+                        if(!hasPermission) return;
+                        changeLightColor(message);
+                        break;
                         case 'cornfetti':
                             if(!hasPermission && extra.sinceLastCommand.any < CONFETTI_TIME) return;
                             this.confetti([
@@ -375,7 +449,7 @@
                     setTimeout(()=>{
                         this.subQueue.shift();
                     }, 2000);
-                    
+
                 },
                 addRaidEvent(user,viewers,extra){
                     this.raidQueue.push({id:this.idCounter,user,viewers,extra});
@@ -386,7 +460,7 @@
                         this.raidQueue.shift();
                     },2000);
                 }
-            
+
             }
         }).mount("#app")
     </script>
